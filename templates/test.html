@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YourKey&libraries=geometry"></script>
+    <meta charset="UTF-8">
+    <title>MyWayPoint</title>
+        <style>
+        /* Always set the map height explicitly to define the size of the div
+         * element that contains the map. */
+        #map {
+            height: 100%;
+        }
+
+        /* Optional: Makes the sample page fill the window. */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        #floating-panel {
+        position: absolute;
+        top: 10px;
+        left: 25%;
+        z-index: 5;
+        background-color: #fff;
+        padding: 5px;
+        border: 1px solid #999;
+        text-align: center;
+        font-family: 'Roboto','sans-serif';
+        line-height: 30px;
+        padding-left: 10px;
+      }
+    </style>
+</head>
+<body>
+<div id="floating-panel">
+    <form method="post">
+        <div id="input">
+            From<input type="text"
+                       name="from"
+                       placeholder="From"/>
+            To<input type="text"
+                     name="to"
+                     placeholder="To"/>
+
+        </div>
+        <div id ="submit">
+{#            Travel Mode#}
+{#            <select name = "traffic_mode">#}
+{#                <option value="driving">Driving</option>#}
+{#                <option value="walking">Walking</option>#}
+{#                <option value="bicycling">Bicycling</option>#}
+{#                <option value="transit">Transit</option>#}
+{#            </select>#}
+            <input type="submit"
+                   value="Go">
+        </div>
+{#        <p id ="show"></p>#}
+    </form>
+</div>
+{% autoescape false %}
+{% endautoescape %}
+<div id="map"></div>
+</body>
+<script>
+{#    var test = 'abc';#}
+
+    function initMap() {
+        var map = new google.maps.Map(document.getElementById('map'), {
+            center: {lat: 42.880230, lng: -78.878738},
+            zoom: 8
+        });
+        var direction1 = {{ direction1|tojson }};
+        var weatherinfor = {{ weather|tojson }}
+{#        var routes = direction1.routes;#}
+{#        var route = routes[0];#}
+{#        var encodeline = route.overview_polyline.points;#}
+{#        document.getElementById("show").innerHTML= typeof(weatherinfor[1]);#}
+{#        var encodeString = encodeline.replace("\\\\", "\\");#}
+
+{#        var decodedString = google.maps.geometry.encoding.decodePath(encodeString);#}
+
+        var path = new Array();
+{#        for(var i =0;i<decodedString.length;i++){#}
+{#            var latValue = decodedString[i].lat();#}
+{#            var lngValue = decodedString[i].lng();#}
+{#            var point = new google.maps.LatLng({lat:latValue, lng:lngValue});#}
+{#            path.push(point);#}
+{#        }#}
+        var stepDisplay = new google.maps.InfoWindow;
+        var markerArray = []
+        showSteps(direction1, markerArray, stepDisplay, map, weatherinfor,path);
+{#        document.getElementById("show").innerHTML= path.length;#}
+        var line = new google.maps.Polyline({
+            path: path,
+            strokeColor: '#00BFFF',
+            strokeOpacity: 1.0,
+            strokeWeight: 3
+         });
+        line.setMap(map);
+
+    }
+
+    function showSteps(directionResult, markerArray, stepDisplay, map, weather,pathArray) {
+        // For each step, place a marker, and add the text to the marker's infowindow.
+        // Also attach the marker to an array so we can keep track of it and remove it
+        // when calculating new routes.
+        var myRoute = directionResult.routes[0].legs[0];
+        for (var i = 0; i < myRoute.steps.length; i++) {
+          var marker = markerArray[i] = markerArray[i] || new google.maps.Marker;
+          marker.setMap(map);
+          marker.setPosition(myRoute.steps[i].start_location);
+          attachInstructionText(
+              stepDisplay, marker, weather[i], map);
+          var encodeline = myRoute.steps[i].polyline.points;
+{#          var encodeString =encodeline.replace("\\\\", "\\");#}
+          var decodedString = google.maps.geometry.encoding.decodePath(encodeline);
+          for(var j =0;j<decodedString.length;j++){
+            var latValue = decodedString[j].lat();
+            var lngValue = decodedString[j].lng();
+            var point = new google.maps.LatLng({lat:latValue, lng:lngValue});
+            pathArray.push(point);
+          }
+        }
+      }
+
+      function attachInstructionText(stepDisplay, marker, text, map) {
+        google.maps.event.addListener(marker, 'click', function() {
+          // Open an info window when the marker is clicked on, containing the text
+          // of the step.
+          stepDisplay.setContent(text);
+          stepDisplay.open(map, marker);
+        });
+      }
+
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=YourKey&callback=initMap"
+        async defer></script>
+
+</html>
